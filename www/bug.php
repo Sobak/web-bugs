@@ -3,11 +3,30 @@
 
 // Obtain common includes
 require_once '../include/prepend.php';
+require '../include/classes/bug.php';
 
 // Start session 
 session_start();
 
 define('SPAM_REJECT_MESSAGE', 'Your comment looks like SPAM by its content. Please consider rewording.');
+
+$bug = new Bug($_REQUEST['id'], $dbh);
+
+// DB error
+if (is_object($bug) && 1 === 2) {
+	response_header('DB error');
+	display_bug_error($bug);
+	response_footer();
+	exit;
+}
+
+// Bug not found
+if (!$bug->exists()) {
+	response_header('No Such Bug');
+	display_bug_error("No such bug #{$bug_id}");
+	response_footer();
+	exit;
+}
 
 // Handle preview
 if (isset($_REQUEST['id']) && $_REQUEST['id'] == 'preview') {
@@ -117,27 +136,6 @@ if (!$logged_in) {
 }
 
 $trytoforce = isset($_POST['trytoforce']) ? (int) $_POST['trytoforce'] : 0;
-
-// fetch info about the bug into $bug
-if (!isset($bug)) {
-	$bug = bugs_get_bug($bug_id);
-}
-
-// DB error
-if (is_object($bug)) {
-	response_header('DB error');
-	display_bug_error($bug);
-	response_footer();
-	exit;
-}
-
-// Bug not found with passed id
-if (!$bug) {
-	response_header('No Such Bug');
-	display_bug_error("No such bug #{$bug_id}");
-	response_footer();
-	exit;
-}
 
 $show_bug_info = bugs_has_access($bug_id, $bug, $pw, $user_flags);
 if ($edit == 2 && !$show_bug_info && $pw && verify_bug_passwd($bug_id, bugs_get_hash($pw))) {
@@ -1095,7 +1093,7 @@ OUTPUT;
 }
 
 // Display comments
-$bug_comments = bugs_get_bug_comments($bug_id);
+$bug_comments = $bug->getComments();
 if ($show_bug_info && is_array($bug_comments) && count($bug_comments) && $bug['status'] !== 'Spam') {
 	$history_tabs = array(
 		'type_all'     => 'All',

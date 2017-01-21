@@ -9,6 +9,7 @@
  */
 
 require_once '../../include/prepend.php';
+require '../../classes/bug.php';
 
 $bug_id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
 $format = isset($_REQUEST['format']) ? $_REQUEST['format'] : 'rss2';
@@ -25,7 +26,8 @@ if ($bug['private'] == 'Y') {
 	die('Access restricted');
 }
 
-$comments = bugs_get_bug_comments($bug_id);
+$bugObj = new Bug($bug_id);
+$comments = $bugObj->getComments();
 
 if ($format == 'xml') {
 	header('Content-type: text/xml; charset=utf-8');
